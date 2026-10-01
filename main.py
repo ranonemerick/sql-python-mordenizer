@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.config.database import Base, engine, get_db
 from app.graph.workflow import modernizer_app
 from app.models.history import ModernizationHistory
+from app.repositories import history_repository
 
 Base.metadata.create_all(bind=engine)
 
@@ -44,6 +45,9 @@ def test_db(db: Session = Depends(get_db)):
 
 @app.post("/modernize", response_model=ModernizeResponse)
 def modernize_sql(request: ModernizeRequest, db: Session = Depends(get_db)):
+
+    execution_record = history_repository.create_execution(db, request.source_code)
+
     initial_state = {
         "source_code": request.source_code,
         "parsed_data": None,
@@ -56,8 +60,28 @@ def modernize_sql(request: ModernizeRequest, db: Session = Depends(get_db)):
 
     final_state = modernizer_app.invoke(initial_state)
 
+    report = final_state.get("report", {})
+    validation_status = report.get("validation_status", "")
+
+    if "SUCCESS" in validation_status:
+        final_status = "success"
+    else:
+        final_status = "failed"
+        report["pipeline_errors"] = final_state.get("errors", [])
+
+    generated_code = final_state.get("generated_code")
+
+    history_repository.update_execution(
+        db=db,
+        record_id=execution_record.id,
+        status=final_status,
+        generated_code=generated_code,
+        report=report,
+    )
+
     return ModernizeResponse(
-        status="success",
-        generated_code=final_state.get("generated_code"),
-        report=final_state.get("report"),
+        id=execution_record.id,
+        status=final_status,
+        generated_code=generated_code,
+        report=report,
     )
