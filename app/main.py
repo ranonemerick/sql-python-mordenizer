@@ -3,12 +3,10 @@ from langfuse.langchain import CallbackHandler
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.config.database import Base, engine, get_db
+from app.config.database import get_db
 from app.graph.workflow import modernizer_app
 from app.models.history import ModernizationHistory
 from app.repositories import history_repository
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="SQL to Python Modernizer",
