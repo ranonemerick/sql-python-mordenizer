@@ -41,7 +41,8 @@ O projeto implementa telemetria avançada no orquestrador LangGraph através da 
 * **Controlo de Custos e Uso:** Monitorização do consumo de tokens por requisição.
 * **Captura de Exceções Externas:** Registo de indisponibilidades da API provedora do modelo fundacional.
 
-*(Nota: Um exemplo visual do rastreio de execução do pipeline encontra-se disponível no ficheiro `/docs/langfuse.png`).*
+![Trace de Execução do Langfuse](/docs/langfuse.png)
+*Exemplo visual do rastreio de execução do orquestrador LangGraph.*
 
 ---
 
@@ -105,7 +106,20 @@ curl -X 'GET' 'http://localhost:8000/test-db' -H 'accept: application/json'
 
 ---
 
-## 7. Execução da Suíte de Testes
+## 7. Visão de Futuro e Escalabilidade (Roadmap)
+
+Para preparar a solução para um ambiente de produção de alta escala (processamento em massa de centenas de Procedures legadas simultaneamente), a arquitetura prevê as seguintes evoluções:
+
+* **Processamento Assíncrono com Filas (Queues/Workers):**
+  Atualmente a API responde de forma síncrona. Em produção, requisições de modernização longas deverão ser publicadas numa fila (ex: **RabbitMQ** ou **Kafka**) e processadas por Workers (ex: **Celery**), devolvendo ao cliente apenas um `job_id` para consulta posterior (Webhooks ou Polling).
+* **Paralelização do LangGraph:**
+  Para scripts gigantes contendo múltiplas Procedures num só ficheiro, o grafo pode ser evoluído para utilizar a funcionalidade `.map()` do LangGraph, dividindo o código em chunks e enviando requisições paralelas para a API do Gemini, reduzindo o tempo total de processamento.
+* **Camada de Cache (Redis):**
+  Implementação de cache semântico (ex: armazenar o hash do SQL de entrada). Se a mesma Procedure for enviada duas vezes, o sistema devolve o código Python gerado anteriormente, poupando tempo e custos (Tokens) da API do LLM.
+
+---
+
+## 8. Execução da Suíte de Testes
 
 Para a execução dos testes automatizados em ambiente local de desenvolvimento (fora da rede Docker):
 
