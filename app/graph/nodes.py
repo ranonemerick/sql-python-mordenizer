@@ -154,7 +154,7 @@ def generate_code_node(state: ModernizationState) -> dict:
 
     # Voltamos ao modelo gemini-1.5-flash sem o wrapper de structured output
     llm = ChatGoogleGenerativeAI(
-        model="gemini-3.8-flash", temperature=0.1, google_api_key=api_key
+        model="gemini-1.5-flash", temperature=0.1, google_api_key=api_key
     )
 
     # Adaptamos o prompt para forçar o JSON no texto de resposta

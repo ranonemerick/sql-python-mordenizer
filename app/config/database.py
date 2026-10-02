@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 load_dotenv()
 
@@ -17,7 +17,8 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Classe base genérica para as entidades anotadas
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 def get_db():

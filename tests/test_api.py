@@ -37,4 +37,4 @@ def test_modernize_endpoint_parsing_error():
 
     assert data["status"] == "failed"
     assert "id" in data
-    assert data["report"]["validation_status"] == "FAILED: Nenhum código gerado"
+    assert "Erro de parsing no sqlglot" in data["report"]["pipeline_errors"][0]

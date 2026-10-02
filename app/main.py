@@ -61,33 +61,45 @@ def modernize_sql(request: ModernizeRequest, db: Session = Depends(get_db)):
 
     langfuse_handler = CallbackHandler()
 
-    final_state = modernizer_app.invoke(
-        initial_state, config={"callbacks": [langfuse_handler]}
-    )
+    try:
+        final_state = modernizer_app.invoke(
+            initial_state, config={"callbacks": [langfuse_handler]}
+        )
 
-    report = final_state.get("report", {})
-    validation_status = report.get("validation_status", "")
-    pipeline_errors = final_state.get("errors", [])
+        report = final_state.get("report", {})
+        validation_status = report.get("validation_status", "")
+        pipeline_errors = final_state.get("errors", [])
 
-    if "SUCCESS" in validation_status and len(pipeline_errors) == 0:
-        final_status = "success"
-    else:
-        final_status = "failed"
-        report["pipeline_errors"] = final_state.get("errors", [])
+        if "SUCCESS" in validation_status and len(pipeline_errors) == 0:
+            final_status = "success"
+        else:
+            final_status = "failed"
+            report["pipeline_errors"] = pipeline_errors
 
-    generated_code = final_state.get("generated_code")
+        generated_code = final_state.get("generated_code")
 
-    history_repository.update_execution(
-        db=db,
-        record_id=execution_record.id,
-        status=final_status,
-        generated_code=generated_code,
-        report=report,
-    )
+        history_repository.update_execution(
+            db=db,
+            record_id=execution_record.id,
+            status=final_status,
+            generated_code=generated_code,
+            report=report,
+        )
 
-    return ModernizeResponse(
-        id=execution_record.id,
-        status=final_status,
-        generated_code=generated_code,
-        report=report,
-    )
+        return ModernizeResponse(
+            id=execution_record.id,
+            status=final_status,
+            generated_code=generated_code,
+            report=report,
+        )
+    except Exception as e:
+        error_msg = f"Erro catastrófico no pipeline: {str(e)}"
+        history_repository.update_execution(
+            db=db,
+            record_id=execution_record.id,
+            status="failed",
+            generated_code=None,
+            report={"pipeline_errors": [error_msg]},
+        )
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=error_msg)
