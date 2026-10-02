@@ -62,8 +62,9 @@ def modernize_sql(request: ModernizeRequest, db: Session = Depends(get_db)):
 
     report = final_state.get("report", {})
     validation_status = report.get("validation_status", "")
+    pipeline_errors = final_state.get("errors", [])
 
-    if "SUCCESS" in validation_status:
+    if "SUCCESS" in validation_status and len(pipeline_errors) == 0:
         final_status = "success"
     else:
         final_status = "failed"
