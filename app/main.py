@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI
+from langfuse.langchain import CallbackHandler
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -22,7 +23,7 @@ class HealthResponse(BaseModel):
 
 class ModernizeRequest(BaseModel):
     source_code: str
-    schema_sql: str | None = None  # Aceita nulo/opcional
+    schema_sql: str | None = None
 
 
 class ModernizeResponse(BaseModel):
@@ -58,7 +59,11 @@ def modernize_sql(request: ModernizeRequest, db: Session = Depends(get_db)):
         "errors": [],
     }
 
-    final_state = modernizer_app.invoke(initial_state)
+    langfuse_handler = CallbackHandler()
+
+    final_state = modernizer_app.invoke(
+        initial_state, config={"callbacks": [langfuse_handler]}
+    )
 
     report = final_state.get("report", {})
     validation_status = report.get("validation_status", "")
